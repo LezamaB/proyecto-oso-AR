@@ -3,37 +3,59 @@
   <head>
     <meta charset="utf-8">
     <title>AR Felicidades</title>
-
-    <!-- Cargamos A-Frame (motor 3D) -->
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-
-    <!-- Cargamos AR.js para marcadores NFT (imagen del oso real) -->
-    <script src="https://cdn.rawgit.com/jeromeetienne/ar.js/2.2.1/aframe/build/aframe-ar-nft.min.js"></script>
-
-    <style> body { margin: 0; overflow: hidden; } </style>
+    <!-- Versiones actualizadas -->
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+    <style> 
+      body { margin: 0; overflow: hidden; }
+      /* Añade un mensaje para ayudar al usuario */
+      .scan-message {
+        position: fixed;
+        bottom: 20px;
+        width: 100%;
+        text-align: center;
+        color: white;
+        font-family: Arial;
+        text-shadow: 1px 1px 2px black;
+        z-index: 1000;
+      }
+    </style>
   </head>
 
   <body>
-
     <!-- Escena AR -->
-    <a-scene embedded arjs="sourceType: webcam;">
+    <a-scene 
+      embedded 
+      arjs="sourceType: webcam; detectionMode: mono; maxDetectionRate: 60;"
+      renderer="logarithmicDepthBuffer: true;"
+    >
+      <!-- Precarga de recursos -->
+      <a-assets>
+        <a-asset-item id="modeloLetras" src="felicidades.glb"></a-asset-item>
+      </a-assets>
 
-      <!-- NFT Marker: reconoce la imagen del oso real -->
-      <a-nft type="nft" url="oso/oso" smooth="true" smoothCount="10">
-
-        <!-- Letras 3D con animación tipo "BUM" -->
-        <a-entity gltf-model="felicidades.glb" 
-                  position="0 1 0" 
-                  scale="0 0 0"
-                  animation="property: scale; to: 1 1 1; dur: 1500; easing: bounce; loop: false;">
-        </a-entity>
-
-      </a-nft>
+      <!-- Marcador NFT (asegúrate de tener los 3 archivos en /oso/) -->
+      <a-nft 
+        type="nft" 
+        url="oso/oso" 
+        smooth="true" 
+        smoothCount="10"
+        emiteEvents="true"
+      >
+        <!-- Letras 3D con animación -->
+        <a-entity 
+          gltf-model="felicidades.glb" 
+          position="0 0.5 0" 
+          scale="0.01 0.01 0.01"
+          animation__scale="property: scale; to: 0.5 0.5 0.5; dur: 1500; easing: easeOutElastic; startEvents: markerFound"
+          animation__rotation="property: rotation; to: 0 360 0; dur: 5000; loop: true; startEvents: markerFound"
+        ></a-entity>
 
       <!-- Cámara -->
       <a-entity camera></a-entity>
-
     </a-scene>
 
+    <!-- Mensaje para el usuario -->
+    <div class="scan-message">Enfoca la imagen del oso con tu cámara</div>
   </body>
 </html>
