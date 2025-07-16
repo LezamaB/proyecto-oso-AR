@@ -40,6 +40,7 @@
         <!-- Precarga el modelo -->
         <a-assets>
             <a-asset-item id="modeloLetras" src="felicidades.glb"></a-asset-item>
+            <a-box color="red" position="0 0.5 0" scale="0.5 0.5 0.5"></a-box>
         </a-assets>
 
         <!-- Marcador NFT del oso -->
@@ -64,6 +65,9 @@
         <!-- Cámara -->
         <a-entity camera></a-entity>
     </a-scene>
+
+    <a-scene arjs="debugUIEnabled: true">
+        
 
     <script>
         // Oculta el mensaje de carga cuando todo esté listo
