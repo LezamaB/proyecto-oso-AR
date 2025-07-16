@@ -2,86 +2,82 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>AR Directo en Navegador</title>
-    <!-- Carga moderna de Three.js -->
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.162.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.162.0/examples/jsm/"
-            }
-        }
-    </script>
+    <title>AR con Marcador de Oso</title>
+    <!-- Versiones modernas de las librerías -->
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; }
-        #ar-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; }
-        #scan-message {
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+        }
+        #loading {
             position: fixed;
-            bottom: 20px;
+            top: 0;
+            left: 0;
             width: 100%;
-            text-align: center;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
             color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             font-family: Arial;
-            background: rgba(0,0,0,0.5);
-            padding: 10px;
-            z-index: 100;
+            z-index: 1000;
         }
     </style>
 </head>
 <body>
-    <div id="ar-container"></div>
-    <div id="scan-message">Enfoca a gordinflas con tu cámara</div>
+    <div id="loading">
+        Cargando experiencia AR... Por favor, enfoca el marcador del oso con tu cámara.
+    </div>
 
-    <script type="module">
-        // Importaciones modernas
-        import * as THREE from 'three';
-        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-        import { ARButton } from 'three/addons/webxr/ARButton.js';
-        
-        // 1. Configuración inicial
-        const container = document.getElementById('ar-container');
-        const message = document.getElementById('scan-message');
-        
-        // 2. Escena Three.js
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.xr.enabled = true;
-        container.appendChild(renderer.domElement);
+    <a-scene 
+        embedded 
+        arjs="sourceType: webcam; detectionMode: mono; debugUIEnabled: false;"
+        renderer="logarithmicDepthBuffer: true;"
+    >
+        <!-- Precarga el modelo -->
+        <a-assets>
+            <a-asset-item id="modeloLetras" src="felicidades.glb"></a-asset-item>
+        </a-assets>
 
-        // 3. Botón AR (para móviles)
-        document.body.appendChild(ARButton.createButton(renderer, { 
-            requiredFeatures: ['hit-test'] 
-        }));
+        <!-- Marcador NFT del oso -->
+        <a-nft 
+            type="nft" 
+            url="oso/oso" 
+            smooth="true" 
+            smoothCount="10"
+            emitevents="true"
+        >
+            <!-- Letras 3D de Felicidades -->
+            <a-entity
+                gltf-model="#modeloLetras"
+                position="0 0.5 0"
+                scale="0.5 0.5 0.5"
+                visible="false"
+                animation__show="property: visible; to: true; startEvents: markerFound"
+                animation__hide="property: visible; to: false; startEvents: markerLost"
+            ></a-entity>
+        </a-nft>
 
-        // 4. Cargar modelos
-        const loader = new GLTFLoader();
-        let modeloLetras;
+        <!-- Cámara -->
+        <a-entity camera></a-entity>
+    </a-scene>
 
-        loader.load('felicidades.glb', (gltf) => {
-            modeloLetras = gltf.scene;
-            modeloLetras.scale.set(0.5, 0.5, 0.5);
-            modeloLetras.position.set(0, 0.5, -1);
-            modeloLetras.visible = false;
-            scene.add(modeloLetras);
-        });
-
-        // 5. Controlador de AR
-        let controller = renderer.xr.getController(0);
-        controller.addEventListener('select', () => {
-            if(modeloLetras) modeloLetras.visible = true;
-            if(modeloFuegos) modeloFuegos.visible = true;
-            message.style.display = 'none';
-        });
-        scene.add(controller);
-
-       
-        // 7. Manejo de ventana
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+    <script>
+        // Oculta el mensaje de carga cuando todo esté listo
+        document.querySelector('a-scene').addEventListener('loaded', function() {
+            document.getElementById('loading').style.display = 'none';
+            
+            // Debug: verifica en consola si se detecta el marcador
+            const marker = document.querySelector('a-nft');
+            marker.addEventListener('markerFound', () => {
+                console.log('¡Marcador detectado!');
+            });
+            marker.addEventListener('markerLost', () => {
+                console.log('Marcador perdido');
+            });
         });
     </script>
 </body>
