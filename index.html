@@ -3,10 +3,15 @@
 <head>
     <meta charset="utf-8">
     <title>AR Directo en Navegador</title>
-    <!-- Usaremos la API WebXR directamente + librería JSAR -->
-    <script src="https://cdn.jsdelivr.net/npm/jsartoolkit@latest/jsartoolkit.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@latest/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@latest/examples/js/loaders/GLTFLoader.js"></script>
+    <!-- Carga moderna de Three.js -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.162.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.162.0/examples/jsm/"
+            }
+        }
+    </script>
     <style>
         body { margin: 0; overflow: hidden; }
         #ar-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; }
@@ -27,72 +32,59 @@
     <div id="ar-container"></div>
     <div id="scan-message">Enfoca a gordinflas con tu cámara</div>
 
-    <script>
+    <script type="module">
+        // Importaciones modernas
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { ARButton } from 'three/addons/webxr/ARButton.js';
+        
         // 1. Configuración inicial
         const container = document.getElementById('ar-container');
         const message = document.getElementById('scan-message');
         
-        // 2. Inicializar Three.js
+        // 2. Escena Three.js
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ alpha: true });
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.xr.enabled = true;
         container.appendChild(renderer.domElement);
 
-        // 3. Cargar modelos
-        const loader = new THREE.GLTFLoader();
+        // 3. Botón AR (para móviles)
+        document.body.appendChild(ARButton.createButton(renderer, { 
+            requiredFeatures: ['hit-test'] 
+        }));
+
+        // 4. Cargar modelos
+        const loader = new GLTFLoader();
         let modeloLetras;
 
         loader.load('felicidades.glb', (gltf) => {
             modeloLetras = gltf.scene;
             modeloLetras.scale.set(0.5, 0.5, 0.5);
-            modeloLetras.position.y = 0.5;
+            modeloLetras.position.set(0, 0.5, -1);
             modeloLetras.visible = false;
             scene.add(modeloLetras);
         });
 
-        // 4. Configurar AR con marcador
-        const arToolkitContext = new THREEx.ArToolkitContext({
-            cameraParametersUrl: 'https://raw.githubusercontent.com/AR-js-org/AR.js/master/data/data/camera_para.dat',
-            detectionMode: 'mono',
-            patternRatio: 0.5,
-        });
-
-        arToolkitContext.init(() => {
-            camera.projectionMatrix.copy(arToolkitContext.getProjectionMatrix());
-        });
-
-        // 5. Crear marcador (usa tu imagen de oso)
-        const arMarkerControls = new THREEx.ArMarkerControls(arToolkitContext, camera, {
-            type: 'pattern',
-            patternUrl: 'oso/oso.patt', 
-            changeMatrixMode: 'cameraTransformMatrix'
-        });
-
-        arMarkerControls.addEventListener('markerFound', () => {
+        // 5. Controlador de AR
+        let controller = renderer.xr.getController(0);
+        controller.addEventListener('select', () => {
             if(modeloLetras) modeloLetras.visible = true;
+            if(modeloFuegos) modeloFuegos.visible = true;
             message.style.display = 'none';
         });
+        scene.add(controller);
 
-        arMarkerControls.addEventListener('markerLost', () => {
-            if(modeloLetras) modeloLetras.visible = false;
-            message.style.display = 'block';
+       
+        renderer.setAnimationLoop(animate);
+
+        // 7. Manejo de ventana
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
         });
-
-
-        // 7. Manejo de cámara
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then((stream) => {
-                const video = document.createElement('video');
-                video.srcObject = stream;
-                video.play();
-                arToolkitContext.arController._orientation = 'portrait';
-                arToolkitContext.arController.options.orientation = 'portrait';
-            })
-            .catch((error) => {
-                console.error("Error al acceder a la cámara:", error);
-                message.textContent = "No se pudo acceder a la cámara. Asegúrate de dar permisos.";
-            });
     </script>
 </body>
 </html>
