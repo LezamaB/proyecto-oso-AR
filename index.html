@@ -3,13 +3,12 @@
 <head>
     <meta charset="utf-8">
     <title>AR Felicidades con Marcador</title>
-    <!-- Versión estable de A-Frame y AR.js -->
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
     <style>
-        body { 
-            margin: 0; 
-            overflow: hidden; 
+        body {
+            margin: 0;
+            overflow: hidden;
             background-color: #000;
         }
         .arjs-loader {
@@ -29,31 +28,26 @@
     </style>
 </head>
 <body>
-    <!-- Mensaje de carga -->
     <div class="arjs-loader">
         Cargando experiencia AR. Por favor, enfoca el marcador del oso con tu cámara...
     </div>
 
-    <!-- Escena AR simplificada -->
-    <a-scene 
-        embedded 
+    <a-scene
+        embedded
         arjs="sourceType: webcam; detectionMode: mono; debugUIEnabled: false;"
         renderer="logarithmicDepthBuffer: true;"
     >
-        <!-- Precarga del modelo -->
         <a-assets timeout="10000">
-        <a-asset-item id="felicidadesModel" src="https://github.com/LezamaB/proyecto-oso-AR/raw/refs/heads/main/Box.glb" 
-                  onerror="console.error('Error loading model')"></a-asset-item>
+            <a-asset-item id="felicidadesModel" src="https://raw.githack.com/LezamaB/proyecto-oso-AR/main/Box.glb"
+                          onerror="console.error('Error cargando modelo GLB. ¡Revisa la URL o CORS!')"></a-asset-item>
         </a-assets>
 
-        <!-- Marcador NFT - RUTA ABSOLUTA RECOMENDADA -->
-        <a-nft 
-            type="nft" 
-            url="https://rawcdn.githack.com/LezamaB/proyecto-oso-AR/main/oso/oso" 
-            smooth="true" 
+        <a-nft
+            type="nft"
+            url="https://raw.githack.com/LezamaB/proyecto-oso-AR/main/oso/oso"
+            smooth="true"
             smoothCount="10"
         >
-            <!-- Modelo 3D con animación de aparición -->
             <a-entity
                 gltf-model="#felicidadesModel"
                 position="0 0.5 0"
@@ -65,17 +59,14 @@
             ></a-entity>
         </a-nft>
 
-        <!-- Cámara -->
         <a-entity camera></a-entity>
     </a-scene>
 
     <script>
-        // Oculta el loader cuando la escena esté lista
         document.querySelector('a-scene').addEventListener('loaded', function() {
             document.querySelector('.arjs-loader').style.display = 'none';
         });
 
-        // Debug: verifica eventos del marcador
         const marker = document.querySelector('a-nft');
         marker.addEventListener('markerFound', (e) => {
             console.log('Marcador detectado!', e.detail);
