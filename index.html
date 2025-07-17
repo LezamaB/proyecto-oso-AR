@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>AR Felicidades con Marcador</title>
+    <title>Experiencia AR con Marcador NFT</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
     <style>
@@ -10,6 +10,7 @@
             margin: 0;
             overflow: hidden;
             background-color: #000;
+            font-family: Arial, sans-serif;
         }
         .arjs-loader {
             position: absolute;
@@ -23,44 +24,55 @@
             justify-content: center;
             align-items: center;
             color: white;
-            font-family: Arial;
             flex-direction: column;
+            text-align: center;
+        }
+        .arjs-loader div {
+            margin: 10px;
         }
         .error-message {
-            color: #ff4444;
+            color: #ff6b6b;
             margin-top: 20px;
             max-width: 80%;
-            text-align: center;
+            display: none;
+        }
+        .success-message {
+            color: #51cf66;
             display: none;
         }
     </style>
 </head>
 <body>
     <div class="arjs-loader">
-        Cargando experiencia AR. Por favor, enfoca el marcador del oso con tu cámara...
+        <div>Cargando experiencia de Realidad Aumentada...</div>
+        <div>Por favor, permite el acceso a la cámara</div>
         <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
     </div>
 
     <a-scene
-        embedded
+        vr-mode-ui="enabled: false"
         arjs="sourceType: webcam; detectionMode: mono; debugUIEnabled: false;"
         renderer="logarithmicDepthBuffer: true;"
     >
+        <!-- Modelo 3D - Reemplaza "model.glb" con tu archivo -->
         <a-assets timeout="20000">
-            <a-asset-item id="felicidadesModel" src="assets/Box.glb"></a-asset-item>
+            <a-asset-item id="ar-model" src="model.glb"></a-asset-item>
         </a-assets>
 
-        <a-nft
+        <!-- Marcador NFT - Asegúrate de tener la carpeta "nft-marker" -->
+        <a-nft 
             type="nft"
-            url="assets/oso/oso"
+            url="nft-marker/marker"  <!-- Cambia "marker" por el nombre base de tus archivos -->
             smooth="true"
             smoothCount="10"
+            emiteEvents="true"
         >
             <a-entity
-                id="ar-model"
-                gltf-model="#felicidadesModel"
+                gltf-model="#ar-model"
                 position="0 0.5 0"
                 scale="0.5 0.5 0.5"
+                rotation="0 0 0"
                 animation="property: scale; from: 0.1 0.1 0.1; to: 0.5 0.5 0.5; dur: 1000; startEvents: markerFound;"
                 visible="false"
                 event-set__markerFound="visible: true"
@@ -72,43 +84,47 @@
     </a-scene>
 
     <script>
-        // Configuración de eventos
+        // Elementos UI
         const loader = document.querySelector('.arjs-loader');
         const errorMessage = document.getElementById('errorMessage');
-        const scene = document.querySelector('a-scene');
-        const model = document.getElementById('ar-model');
+        const successMessage = document.getElementById('successMessage');
+        const modelEntity = document.querySelector('[gltf-model]');
+        const nftMarker = document.querySelector('a-nft');
 
         // Verificar carga del modelo
-        model.addEventListener('model-loaded', () => {
+        modelEntity.addEventListener('model-loaded', () => {
+            successMessage.textContent = '¡Modelo cargado correctamente! Enfoca el marcador con tu cámara';
+            successMessage.style.display = 'block';
             console.log('Modelo 3D cargado correctamente');
+        });
+
+        modelEntity.addEventListener('model-error', (e) => {
+            showError('Error cargando el modelo 3D. Verifica:<br>1. Que el archivo "model.glb" existe<br>2. Que tiene el nombre correcto');
+            console.error('Error cargando modelo:', e.detail);
+        });
+
+        // Eventos del marcador NFT
+        nftMarker.addEventListener('markerFound', (e) => {
+            console.log('Marcador detectado:', e.detail);
             loader.style.display = 'none';
         });
 
-        model.addEventListener('model-error', (e) => {
-            console.error('Error cargando modelo:', e.detail);
-            showError('Error cargando el modelo 3D. Por favor actualiza la página o prueba en otro navegador.');
+        nftMarker.addEventListener('markerLost', () => {
+            console.log('Marcador perdido');
         });
 
-        // Verificar después de 15 segundos
+        // Timeout para errores
         setTimeout(() => {
             if (loader.style.display !== 'none') {
-                showError('Tiempo de espera agotado. Asegúrate de: <br>1. Dar permisos de cámara<br>2. Usar Chrome/Edge<br>3. Tener buena iluminación');
+                showError('¿Problemas de carga?<br>1. Asegúrate de dar permisos de cámara<br>2. Verifica que los archivos del marcador están en la carpeta "nft-marker"<br>3. Prueba en Chrome o Edge');
             }
         }, 15000);
 
         function showError(message) {
             errorMessage.innerHTML = message;
             errorMessage.style.display = 'block';
+            successMessage.style.display = 'none';
         }
-
-        // Debug de marcador
-        const marker = document.querySelector('a-nft');
-        marker.addEventListener('markerFound', (e) => {
-            console.log('Marcador detectado!', e.detail);
-        });
-        marker.addEventListener('markerLost', () => {
-            console.log('Marcador perdido');
-        });
     </script>
 </body>
 </html>
