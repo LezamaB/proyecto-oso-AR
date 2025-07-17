@@ -24,12 +24,21 @@
             align-items: center;
             color: white;
             font-family: Arial;
+            flex-direction: column;
+        }
+        .error-message {
+            color: #ff4444;
+            margin-top: 20px;
+            max-width: 80%;
+            text-align: center;
+            display: none;
         }
     </style>
 </head>
 <body>
     <div class="arjs-loader">
         Cargando experiencia AR. Por favor, enfoca el marcador del oso con tu cámara...
+        <div class="error-message" id="errorMessage"></div>
     </div>
 
     <a-scene
@@ -37,18 +46,18 @@
         arjs="sourceType: webcam; detectionMode: mono; debugUIEnabled: false;"
         renderer="logarithmicDepthBuffer: true;"
     >
-        <a-assets timeout="10000">
-            <a-asset-item id="felicidadesModel" src="https://raw.githack.com/LezamaB/proyecto-oso-AR/main/Box.glb"
-                          onerror="console.error('Error cargando modelo GLB. ¡Revisa la URL o CORS!')"></a-asset-item>
+        <a-assets timeout="20000">
+            <a-asset-item id="felicidadesModel" src="assets/Box.glb"></a-asset-item>
         </a-assets>
 
         <a-nft
             type="nft"
-            url="https://raw.githack.com/LezamaB/proyecto-oso-AR/main/oso/oso"
+            url="assets/oso/oso"
             smooth="true"
             smoothCount="10"
         >
             <a-entity
+                id="ar-model"
                 gltf-model="#felicidadesModel"
                 position="0 0.5 0"
                 scale="0.5 0.5 0.5"
@@ -63,10 +72,36 @@
     </a-scene>
 
     <script>
-        document.querySelector('a-scene').addEventListener('loaded', function() {
-            document.querySelector('.arjs-loader').style.display = 'none';
+        // Configuración de eventos
+        const loader = document.querySelector('.arjs-loader');
+        const errorMessage = document.getElementById('errorMessage');
+        const scene = document.querySelector('a-scene');
+        const model = document.getElementById('ar-model');
+
+        // Verificar carga del modelo
+        model.addEventListener('model-loaded', () => {
+            console.log('Modelo 3D cargado correctamente');
+            loader.style.display = 'none';
         });
 
+        model.addEventListener('model-error', (e) => {
+            console.error('Error cargando modelo:', e.detail);
+            showError('Error cargando el modelo 3D. Por favor actualiza la página o prueba en otro navegador.');
+        });
+
+        // Verificar después de 15 segundos
+        setTimeout(() => {
+            if (loader.style.display !== 'none') {
+                showError('Tiempo de espera agotado. Asegúrate de: <br>1. Dar permisos de cámara<br>2. Usar Chrome/Edge<br>3. Tener buena iluminación');
+            }
+        }, 15000);
+
+        function showError(message) {
+            errorMessage.innerHTML = message;
+            errorMessage.style.display = 'block';
+        }
+
+        // Debug de marcador
         const marker = document.querySelector('a-nft');
         marker.addEventListener('markerFound', (e) => {
             console.log('Marcador detectado!', e.detail);
