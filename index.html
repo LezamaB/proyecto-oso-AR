@@ -2,75 +2,57 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Experiencia AR con Marcador NFT</title>
+    <title>AR Funcional Definitivo</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@master/aframe/build/aframe-ar-nft.js"></script>
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background-color: #000;
-            font-family: Arial, sans-serif;
-        }
+        body { margin: 0; overflow: hidden; }
         .arjs-loader {
-            position: absolute;
-            top: 0;
-            left: 0;
+            height: 100vh;
             width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            z-index: 9999;
             display: flex;
             justify-content: center;
             align-items: center;
+            background: #000;
             color: white;
-            flex-direction: column;
-            text-align: center;
+            font-family: Arial;
+            position: absolute;
+            z-index: 9999;
         }
-        .error-message {
-            color: #ff6b6b;
-            margin-top: 20px;
-            max-width: 80%;
-        }
-        .instructions {
-            color: #4dabf7;
-            margin-top: 15px;
-            font-size: 14px;
-        }
+        .model-loaded { display: none; }
     </style>
 </head>
 <body>
-    <div class="arjs-loader">
-        <div>Cargando experiencia de Realidad Aumentada...</div>
-        <div class="error-message" id="errorMessage"></div>
-        <div class="instructions" id="instructions"></div>
+    <div class="arjs-loader" id="loader">
+        <div>
+            <h3>Cargando AR...</h3>
+            <p id="status">Inicializando cámara</p>
+        </div>
     </div>
 
-    <a-scene
+    <a-scene 
         vr-mode-ui="enabled: false"
-        arjs="sourceType: webcam; detectionMode: mono; debugUIEnabled: false;"
-        renderer="logarithmicDepthBuffer: true;"
+        arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono;"
+        renderer="logarithmicDepthBuffer: true; precision: medium;"
     >
-        <!-- Modelo 3D con ruta relativa -->
-        <a-assets timeout="30000">
-            <a-asset-item id="ar-model" src="model.glb"></a-asset-item>
+        <!-- Modelo con pre-carga optimizada -->
+        <a-assets>
+            <a-asset-item id="model" src="model.glb"></a-asset-item>
         </a-assets>
 
-        <!-- Marcador NFT con rutas absolutas a tu estructura específica -->
+        <!-- Marcador NFT simplificado -->
         <a-nft 
-            type="nft"
-            url="https://raw.githack.com/LezamaB/proyecto-oso-AR/main/nft-marker/marker"
+            type="nft" 
+            url="nft-marker/marker"
             smooth="true"
-            smoothCount="10"
+            smoothCount="5"
         >
             <a-entity
-                gltf-model="#ar-model"
-                position="0 0.5 0"
+                gltf-model="#model"
+                position="0 0 0"
                 scale="0.5 0.5 0.5"
-                animation="property: scale; from: 0.1 0.1 0.1; to: 0.5 0.5 0.5; dur: 1000; startEvents: markerFound;"
-                visible="false"
-                event-set__markerFound="visible: true"
-                event-set__markerLost="visible: false"
+                rotation="0 0 0"
+                visible="true"
             ></a-entity>
         </a-nft>
 
@@ -78,49 +60,41 @@
     </a-scene>
 
     <script>
-        // Configuración de eventos
-        const loader = document.querySelector('.arjs-loader');
-        const errorMessage = document.getElementById('errorMessage');
-        const instructions = document.getElementById('instructions');
-        const modelEntity = document.querySelector('[gltf-model]');
-        const nftMarker = document.querySelector('a-nft');
+        // Debug avanzado
+        const loader = document.getElementById('loader');
+        const status = document.getElementById('status');
+        
+        // 1. Verificar compatibilidad
+        if (!navigator.mediaDevices) {
+            status.innerHTML = "ERROR: Necesitas HTTPS o localhost";
+            throw new Error("Sin acceso a cámara");
+        }
 
-        // Verificar carga del modelo
-        modelEntity.addEventListener('model-loaded', () => {
-            console.log('Modelo 3D cargado correctamente');
-            instructions.innerHTML = '¡Modelo cargado! Busca el marcador con tu cámara';
+        // 2. Eventos de carga
+        const scene = document.querySelector('a-scene');
+        const model = document.querySelector('[gltf-model]');
+        
+        scene.addEventListener('loaded', () => {
+            status.textContent = "Escena lista, buscando marcador...";
         });
 
-        modelEntity.addEventListener('model-error', (e) => {
-            errorMessage.innerHTML = 'Error cargando el modelo 3D. Verifica:';
-            instructions.innerHTML = '1. Que el archivo "model.glb" está en la carpeta principal<br>2. Que tiene el nombre correcto';
-            console.error('Error cargando modelo:', e.detail);
+        model.addEventListener('model-loaded', () => {
+            status.textContent = "¡Modelo cargado correctamente!";
+            setTimeout(() => loader.style.display = 'none', 1500);
+            console.log("Modelo 3D cargado:", model.components['gltf-model'].model);
         });
 
-        // Eventos del marcador NFT
-        nftMarker.addEventListener('markerFound', (e) => {
-            console.log('Marcador detectado:', e.detail);
-            loader.style.display = 'none';
+        model.addEventListener('model-error', (e) => {
+            status.innerHTML = `ERROR: Modelo no carga<br>${e.detail.message}`;
+            console.error("Error modelo:", e.detail);
         });
 
-        nftMarker.addEventListener('markerLost', () => {
-            console.log('Marcador perdido');
-        });
-
-        // Verificar archivos del marcador
+        // 3. Forzar recarga si tarda demasiado
         setTimeout(() => {
-            fetch('https://raw.githack.com/LezamaB/proyecto-oso-AR/main/nft-marker/marker.fset')
-                .then(response => {
-                    if (!response.ok) {
-                        errorMessage.innerHTML = 'Error: Archivos de marcador no encontrados';
-                        instructions.innerHTML = 'Verifica que estos archivos existen en GitHub:<br>nft-marker/marker.fset<br>nft-marker/marker.fset3<br>nft-marker/marker.iset';
-                    }
-                })
-                .catch(error => {
-                    errorMessage.innerHTML = 'Error de red al cargar marcador';
-                    instructions.innerHTML = 'Prueba en otro navegador (Chrome/Edge) o verifica tu conexión';
-                });
-        }, 8000);
+            if (loader.style.display !== 'none') {
+                status.innerHTML = "¿Problemas?<br>1. Verifica los archivos<br>2. Prueba en Chrome<br>3. Recarga la página";
+            }
+        }, 10000);
     </script>
 </body>
 </html>
