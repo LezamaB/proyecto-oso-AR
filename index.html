@@ -27,27 +27,23 @@
             flex-direction: column;
             text-align: center;
         }
-        .arjs-loader div {
-            margin: 10px;
-        }
         .error-message {
             color: #ff6b6b;
             margin-top: 20px;
             max-width: 80%;
-            display: none;
         }
-        .success-message {
-            color: #51cf66;
-            display: none;
+        .instructions {
+            color: #4dabf7;
+            margin-top: 15px;
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
     <div class="arjs-loader">
         <div>Cargando experiencia de Realidad Aumentada...</div>
-        <div>Por favor, permite el acceso a la cámara</div>
         <div class="error-message" id="errorMessage"></div>
-        <div class="success-message" id="successMessage"></div>
+        <div class="instructions" id="instructions"></div>
     </div>
 
     <a-scene
@@ -55,24 +51,22 @@
         arjs="sourceType: webcam; detectionMode: mono; debugUIEnabled: false;"
         renderer="logarithmicDepthBuffer: true;"
     >
-        <!-- Modelo 3D - Reemplaza "model.glb" con tu archivo -->
-        <a-assets timeout="20000">
+        <!-- Modelo 3D con ruta relativa -->
+        <a-assets timeout="30000">
             <a-asset-item id="ar-model" src="model.glb"></a-asset-item>
         </a-assets>
 
-        <!-- Marcador NFT - Asegúrate de tener la carpeta "nft-marker" -->
+        <!-- Marcador NFT con rutas absolutas a tu estructura específica -->
         <a-nft 
             type="nft"
-            url="nft-marker/marker"  <!-- Cambia "marker" por el nombre base de tus archivos -->
+            url="https://raw.githack.com/LezamaB/proyecto-oso-AR/main/nft-marker/marker"
             smooth="true"
             smoothCount="10"
-            emiteEvents="true"
         >
             <a-entity
                 gltf-model="#ar-model"
                 position="0 0.5 0"
                 scale="0.5 0.5 0.5"
-                rotation="0 0 0"
                 animation="property: scale; from: 0.1 0.1 0.1; to: 0.5 0.5 0.5; dur: 1000; startEvents: markerFound;"
                 visible="false"
                 event-set__markerFound="visible: true"
@@ -84,22 +78,22 @@
     </a-scene>
 
     <script>
-        // Elementos UI
+        // Configuración de eventos
         const loader = document.querySelector('.arjs-loader');
         const errorMessage = document.getElementById('errorMessage');
-        const successMessage = document.getElementById('successMessage');
+        const instructions = document.getElementById('instructions');
         const modelEntity = document.querySelector('[gltf-model]');
         const nftMarker = document.querySelector('a-nft');
 
         // Verificar carga del modelo
         modelEntity.addEventListener('model-loaded', () => {
-            successMessage.textContent = '¡Modelo cargado correctamente! Enfoca el marcador con tu cámara';
-            successMessage.style.display = 'block';
             console.log('Modelo 3D cargado correctamente');
+            instructions.innerHTML = '¡Modelo cargado! Busca el marcador con tu cámara';
         });
 
         modelEntity.addEventListener('model-error', (e) => {
-            showError('Error cargando el modelo 3D. Verifica:<br>1. Que el archivo "model.glb" existe<br>2. Que tiene el nombre correcto');
+            errorMessage.innerHTML = 'Error cargando el modelo 3D. Verifica:';
+            instructions.innerHTML = '1. Que el archivo "model.glb" está en la carpeta principal<br>2. Que tiene el nombre correcto';
             console.error('Error cargando modelo:', e.detail);
         });
 
@@ -113,18 +107,20 @@
             console.log('Marcador perdido');
         });
 
-        // Timeout para errores
+        // Verificar archivos del marcador
         setTimeout(() => {
-            if (loader.style.display !== 'none') {
-                showError('¿Problemas de carga?<br>1. Asegúrate de dar permisos de cámara<br>2. Verifica que los archivos del marcador están en la carpeta "nft-marker"<br>3. Prueba en Chrome o Edge');
-            }
-        }, 15000);
-
-        function showError(message) {
-            errorMessage.innerHTML = message;
-            errorMessage.style.display = 'block';
-            successMessage.style.display = 'none';
-        }
+            fetch('https://raw.githack.com/LezamaB/proyecto-oso-AR/main/nft-marker/marker.fset')
+                .then(response => {
+                    if (!response.ok) {
+                        errorMessage.innerHTML = 'Error: Archivos de marcador no encontrados';
+                        instructions.innerHTML = 'Verifica que estos archivos existen en GitHub:<br>nft-marker/marker.fset<br>nft-marker/marker.fset3<br>nft-marker/marker.iset';
+                    }
+                })
+                .catch(error => {
+                    errorMessage.innerHTML = 'Error de red al cargar marcador';
+                    instructions.innerHTML = 'Prueba en otro navegador (Chrome/Edge) o verifica tu conexión';
+                });
+        }, 8000);
     </script>
 </body>
 </html>
