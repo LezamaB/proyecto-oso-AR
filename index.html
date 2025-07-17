@@ -41,8 +41,9 @@
         renderer="logarithmicDepthBuffer: true;"
     >
         <!-- Precarga del modelo -->
-        <a-assets>
-            <a-asset-item id="felicidadesModel" src="felicidades.glb"></a-asset-item>
+        <a-assets timeout="10000">
+        <a-asset-item id="felicidadesModel" src="felicidades.glb" 
+                  onerror="console.error('Error loading model')"></a-asset-item>
         </a-assets>
 
         <!-- Marcador NFT - RUTA ABSOLUTA RECOMENDADA -->
